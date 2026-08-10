@@ -130,10 +130,6 @@ void move_client(const Arg *arg) {
 		move_two_client(c, tc, arg->i);
 		return;
 	}
-	if (c->mon != tc->mon) {
-		move_two_client(c, tc, arg->i);
-		return;
-	}
 
 	if (c->mon &&
 		c->mon->pertag->ltidxs[c->mon->pertag->curtag]->id == DWINDLE) {

@@ -320,8 +320,32 @@ static void dwindle_move_client(DwindleNode **root, Client *c, Client *target,
 								float ratio, int32_t dir, bool lock) {
 	if (!c || !target || c == target)
 		return;
+
+	Monitor *old_mon = c->mon;
+	Monitor *t_mon = target->mon;
+
+	if (old_mon != t_mon) {
+
+		c->mon = t_mon;
+		t_mon->sel = c;
+		selmon = t_mon;
+
+		arrange(old_mon, false, false);
+		arrange(t_mon, false, false);
+
+		if (t_mon->m.x > old_mon->m.x || t_mon->m.y > old_mon->m.y) {
+			Client *c_tmp = target;
+			target = c;
+			c = c_tmp;
+		}
+		arrange(old_mon, false, false);
+		arrange(t_mon, false, false);
+		return;
+	}
+
 	DwindleNode *c_leaf = dwindle_find_leaf(*root, c);
 	DwindleNode *t_leaf = dwindle_find_leaf(*root, target);
+
 	if (!c_leaf || !t_leaf)
 		return;
 
@@ -332,8 +356,8 @@ static void dwindle_move_client(DwindleNode **root, Client *c, Client *target,
 		p->second = tmp;
 		return;
 	}
-
 	bool split_h = (dir == LEFT || dir == RIGHT);
+
 	bool as_first;
 	if (dir == LEFT || dir == RIGHT) {
 		int cy = c->geom.y + c->geom.height / 2;

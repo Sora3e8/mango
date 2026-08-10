@@ -5800,6 +5800,17 @@ static void move_two_client(Client *c, Client *target, int32_t dir) {
 			c->mon = target_mon;
 			target_mon->sel = c;
 			selmon = target_mon;
+
+			if (target != NULL) {
+				wl_list_remove(&c->link);
+				if (target_mon->m.x > old_mon->m.x ||
+					target_mon->m.y > old_mon->m.y) {
+					wl_list_insert(target->link.prev, &c->link);
+				} else {
+					wl_list_insert(&target->link, &c->link);
+				}
+			}
+
 			arrange(old_mon, false, false);
 			arrange(target_mon, false, false);
 
