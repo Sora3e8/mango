@@ -909,7 +909,7 @@ void smartmovewin(const Arg *arg) {
 	if (!selmon)
 		return;
 	c = arg->tc ? arg->tc : selmon->sel;
-	if (!c || c->isfullscreen)
+	if (!c || c->isfullscreen || !c->mon)
 		return;
 	if (!c->isfloating)
 		setfloating(c, true);
