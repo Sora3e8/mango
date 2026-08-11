@@ -332,28 +332,38 @@ static void dwindle_move_client(DwindleNode **root, Client *c, Client *target,
 
 		arrange(old_mon, false, false);
 		arrange(t_mon, false, false);
-
-		if (t_mon->m.x > old_mon->m.x || t_mon->m.y > old_mon->m.y) {
-			Client *c_tmp = target;
-			target = c;
-			c = c_tmp;
-		}
-		arrange(old_mon, false, false);
-		arrange(t_mon, false, false);
-		return;
 	}
 
-	DwindleNode *c_leaf = dwindle_find_leaf(*root, c);
-	DwindleNode *t_leaf = dwindle_find_leaf(*root, target);
+	DwindleNode **_root;
+	DwindleNode *c_leaf;
+	DwindleNode *t_leaf;
+
+	if (old_mon != t_mon) {
+		uint32_t tag = t_mon->pertag->curtag;
+		_root = &t_mon->pertag->dwindle_root[tag];
+		c_leaf = dwindle_find_leaf(*_root, c);
+		t_leaf = dwindle_find_leaf(*_root, target);
+
+	} else {
+		_root = root;
+		c_leaf = dwindle_find_leaf(*_root, c);
+		t_leaf = dwindle_find_leaf(*_root, target);
+	}
 
 	if (!c_leaf || !t_leaf)
 		return;
 
 	if (c_leaf->parent && c_leaf->parent == t_leaf->parent) {
-		DwindleNode *p = c_leaf->parent;
-		DwindleNode *tmp = p->first;
-		p->first = p->second;
-		p->second = tmp;
+
+		if ((t_mon == old_mon) ||
+			(t_mon->m.x > old_mon->m.x || t_mon->m.y > old_mon->m.y)) {
+
+			DwindleNode *p = c_leaf->parent;
+			DwindleNode *tmp = p->first;
+			p->first = p->second;
+			p->second = tmp;
+		}
+
 		return;
 	}
 	bool split_h = (dir == LEFT || dir == RIGHT);
@@ -366,8 +376,16 @@ static void dwindle_move_client(DwindleNode **root, Client *c, Client *target,
 	} else {
 		as_first = (dir == UP);
 	}
-	dwindle_remove(root, c);
-	dwindle_insert(root, c, target, ratio, as_first, split_h, lock);
+
+	if (t_mon == old_mon ||
+		(t_mon->m.x > old_mon->m.x || t_mon->m.y > old_mon->m.y)) {
+		dwindle_remove(_root, c);
+		dwindle_insert(_root, c, target, ratio, as_first, split_h, lock);
+	} else {
+
+		dwindle_remove(_root, target);
+		dwindle_insert(_root, target, c, ratio, as_first, split_h, lock);
+	}
 }
 
 static void dwindle_swap_clients(Client *c1, Client *c2) {
