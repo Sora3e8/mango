@@ -347,10 +347,6 @@ static void dwindle_move_client(Client *c1, Client *c2, float ratio,
 	t_leaf = dwindle_find_leaf(*root, c2);
 
 	if (!c_leaf || !t_leaf) {
-		if (!c_leaf)
-			printf("move_client c_leaf not found!\n");
-		if (!t_leaf)
-			printf("move_client t_leaf not found!\n");
 		return;
 	}
 
@@ -362,10 +358,8 @@ static void dwindle_move_client(Client *c1, Client *c2, float ratio,
 			DwindleNode *tmp = p->first;
 			p->first = p->second;
 			p->second = tmp;
-			printf("move_client horizontal swap!\n");
-		} else {
-			printf("move_client horizontal-not swap!\n");
 		}
+
 		return;
 	}
 	bool split_h = (dir == LEFT || dir == RIGHT);
@@ -383,7 +377,6 @@ static void dwindle_move_client(Client *c1, Client *c2, float ratio,
 		(t_mon->m.x > c_mon->m.x || t_mon->m.y > c_mon->m.y)) {
 		dwindle_remove(root, c1);
 		dwindle_insert(root, c1, c2, ratio, as_first, split_h, lock);
-		printf("move_client swap2!\n");
 	} else {
 		dwindle_remove(root, c2);
 		dwindle_insert(root, c2, c1, ratio, as_first, split_h, lock);
