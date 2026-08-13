@@ -138,6 +138,8 @@ void move_client(const Arg *arg) {
 		move_two_client(c, tc, arg->i);
 	}
 
+	warp_cursor(c);
+
 	return;
 }
 

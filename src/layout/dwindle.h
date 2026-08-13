@@ -325,6 +325,14 @@ static void dwindle_move_client(Client *c1, Client *c2, float ratio,
 	Monitor *c_mon = c1->mon;
 	Monitor *t_mon = ((c2 == NULL) ? dirtomon(dir) : c2->mon);
 
+	uint32_t move_dir =
+		(t_mon->m.x > c_mon->m.x) * RIGHT | (t_mon->m.x < c_mon->m.x) * LEFT |
+		(t_mon->m.y > c_mon->m.y) * UP | (t_mon->m.y < c_mon->m.y) * DOWN;
+
+	if ((!config.exchange_cross_monitor || move_dir != dir) && c_mon != t_mon) {
+		return;
+	}
+
 	if (c_mon != t_mon) {
 		c1->mon = t_mon;
 		t_mon->sel = c1;
@@ -332,9 +340,6 @@ static void dwindle_move_client(Client *c1, Client *c2, float ratio,
 
 		arrange(c_mon, false, false);
 		arrange(t_mon, false, false);
-
-		if (!c2)
-			return;
 	}
 
 	DwindleNode **root;
@@ -346,22 +351,25 @@ static void dwindle_move_client(Client *c1, Client *c2, float ratio,
 	c_leaf = dwindle_find_leaf(*root, c1);
 	t_leaf = dwindle_find_leaf(*root, c2);
 
-	if (!c_leaf || !t_leaf) {
+	if (!c_leaf) {
 		return;
 	}
 
 	if (c_leaf->parent && c_leaf->parent == t_leaf->parent) {
-		if ((t_mon == c_mon) ||
-			(t_mon->m.x > c_mon->m.x || t_mon->m.y > c_mon->m.y)) {
-
+		if ((move_dir == RIGHT || move_dir == UP) || t_mon == c_mon) {
 			DwindleNode *p = c_leaf->parent;
 			DwindleNode *tmp = p->first;
 			p->first = p->second;
 			p->second = tmp;
+			printf("[dwindle_move] Swap trigger!\n");
 		}
 
 		return;
 	}
+
+	if (!c2)
+		return;
+
 	bool split_h = (dir == LEFT || dir == RIGHT);
 
 	bool as_first;
