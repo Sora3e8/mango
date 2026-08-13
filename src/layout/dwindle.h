@@ -381,8 +381,7 @@ static void dwindle_move_client(Client *c1, Client *c2, float ratio,
 		as_first = (dir == UP);
 	}
 
-	if (t_mon == c_mon ||
-		(t_mon->m.x > c_mon->m.x || t_mon->m.y > c_mon->m.y)) {
+	if (t_mon == c_mon || (move_dir == RIGHT || move_dir == LEFT)) {
 		dwindle_remove(root, c1);
 		dwindle_insert(root, c1, c2, ratio, as_first, split_h, lock);
 	} else {
