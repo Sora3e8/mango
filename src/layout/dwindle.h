@@ -316,75 +316,78 @@ static void dwindle_assign(DwindleNode *node, int32_t ax, int32_t ay,
 	}
 }
 
-static void dwindle_move_client(DwindleNode **root, Client *c, Client *target,
-								float ratio, int32_t dir, bool lock) {
-	if (!c || !target || c == target)
+static void dwindle_move_client(Client *c1, Client *c2, float ratio,
+								int32_t dir, bool lock) {
+
+	if (!c1 || c1 == c2)
 		return;
 
-	Monitor *old_mon = c->mon;
-	Monitor *t_mon = target->mon;
+	Monitor *c_mon = c1->mon;
+	Monitor *t_mon = ((c2 == NULL) ? dirtomon(dir) : c2->mon);
 
-	if (old_mon != t_mon) {
+	uint32_t move_dir =
+		(t_mon->m.x > c_mon->m.x) * RIGHT | (t_mon->m.x < c_mon->m.x) * LEFT |
+		(t_mon->m.y > c_mon->m.y) * UP | (t_mon->m.y < c_mon->m.y) * DOWN;
 
-		c->mon = t_mon;
-		t_mon->sel = c;
+	if ((!config.exchange_cross_monitor || move_dir != dir) && c_mon != t_mon) {
+		return;
+	}
+
+	if (c_mon != t_mon) {
+		c1->mon = t_mon;
+		t_mon->sel = c1;
 		selmon = t_mon;
 
-		arrange(old_mon, false, false);
+		arrange(c_mon, false, false);
 		arrange(t_mon, false, false);
 	}
 
-	DwindleNode **_root;
+	DwindleNode **root;
 	DwindleNode *c_leaf;
 	DwindleNode *t_leaf;
 
-	if (old_mon != t_mon) {
-		uint32_t tag = t_mon->pertag->curtag;
-		_root = &t_mon->pertag->dwindle_root[tag];
-		c_leaf = dwindle_find_leaf(*_root, c);
-		t_leaf = dwindle_find_leaf(*_root, target);
+	uint32_t tag = t_mon->pertag->curtag;
+	root = &t_mon->pertag->dwindle_root[tag];
+	c_leaf = dwindle_find_leaf(*root, c1);
+	t_leaf = dwindle_find_leaf(*root, c2);
 
-	} else {
-		_root = root;
-		c_leaf = dwindle_find_leaf(*_root, c);
-		t_leaf = dwindle_find_leaf(*_root, target);
+	if (!c_leaf) {
+		return;
 	}
 
-	if (!c_leaf || !t_leaf)
-		return;
-
 	if (c_leaf->parent && c_leaf->parent == t_leaf->parent) {
-
-		if ((t_mon == old_mon) ||
-			(t_mon->m.x > old_mon->m.x || t_mon->m.y > old_mon->m.y)) {
-
+		if ((move_dir == RIGHT || move_dir == UP) || t_mon == c_mon) {
 			DwindleNode *p = c_leaf->parent;
 			DwindleNode *tmp = p->first;
 			p->first = p->second;
 			p->second = tmp;
+			printf("[dwindle_move] Swap trigger!\n");
 		}
 
 		return;
 	}
+
+	if (!c2)
+		return;
+
 	bool split_h = (dir == LEFT || dir == RIGHT);
 
 	bool as_first;
 	if (dir == LEFT || dir == RIGHT) {
-		int cy = c->geom.y + c->geom.height / 2;
-		int ty = target->geom.y + target->geom.height / 2;
+		int cy = c1->geom.y + c1->geom.height / 2;
+		int ty = c2->geom.y + c2->geom.height / 2;
 		as_first = (cy < ty);
 	} else {
 		as_first = (dir == UP);
 	}
 
-	if (t_mon == old_mon ||
-		(t_mon->m.x > old_mon->m.x || t_mon->m.y > old_mon->m.y)) {
-		dwindle_remove(_root, c);
-		dwindle_insert(_root, c, target, ratio, as_first, split_h, lock);
+	if (t_mon == c_mon ||
+		(t_mon->m.x > c_mon->m.x || t_mon->m.y > c_mon->m.y)) {
+		dwindle_remove(root, c1);
+		dwindle_insert(root, c1, c2, ratio, as_first, split_h, lock);
 	} else {
-
-		dwindle_remove(_root, target);
-		dwindle_insert(_root, target, c, ratio, as_first, split_h, lock);
+		dwindle_remove(root, c2);
+		dwindle_insert(root, c2, c1, ratio, as_first, split_h, lock);
 	}
 }
 

@@ -114,32 +114,32 @@ void exchange_client(const Arg *arg) {
 void move_client(const Arg *arg) {
 	if (!selmon)
 		return;
-	Client *c = arg->tc ? arg->tc : selmon->sel;
-	if (!c || c->isfloating)
-		return;
 
-	if ((c->isfullscreen || c->ismaximizescreen) && !is_scroller_layout(c->mon))
+	Client *c = arg->tc ? arg->tc : selmon->sel;
+
+	if (!c || c->isfloating) {
 		return;
+	} else if ((c->isfullscreen || c->ismaximizescreen) &&
+			   !is_scroller_layout(c->mon)) {
+		return;
+	}
 
 	Client *tc = direction_select(arg);
 	tc = get_focused_stack_client(tc, arg->tc);
 
-	if (!tc)
-		tc = NULL;
-	if (tc == NULL) {
-		move_two_client(c, tc, arg->i);
-		return;
-	}
+	uint32_t layout_id =
+		(!tc ? dirtomon(arg->i)->pertag->ltidxs[c->mon->pertag->curtag]->id
+			 : tc->mon->pertag->ltidxs[c->mon->pertag->curtag]->id);
 
-	if (c->mon &&
-		c->mon->pertag->ltidxs[c->mon->pertag->curtag]->id == DWINDLE) {
-		uint32_t tag = c->mon->pertag->curtag;
-		dwindle_move_client(&c->mon->pertag->dwindle_root[tag], c, tc,
-							config.dwindle_split_ratio, arg->i, false);
+	if (layout_id == DWINDLE) {
+		dwindle_move_client(c, tc, config.dwindle_split_ratio, arg->i, false);
 		arrange(c->mon, false, false);
 	} else {
 		move_two_client(c, tc, arg->i);
 	}
+
+	warp_cursor(c);
+
 	return;
 }
 
