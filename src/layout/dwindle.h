@@ -361,7 +361,6 @@ static void dwindle_move_client(Client *c1, Client *c2, float ratio,
 			DwindleNode *tmp = p->first;
 			p->first = p->second;
 			p->second = tmp;
-			printf("[dwindle_move] Swap trigger!\n");
 		}
 
 		return;
